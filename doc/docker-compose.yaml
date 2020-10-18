@@ -1,0 +1,15 @@
+version: '3'
+services:
+
+  mysql:
+    image: mysql:8.0.21
+    container_name: mysql
+    command: mysqld --datadir=/var/lib/mysql --user=mysql --server-id=1 --log-bin=/var/lib/mysql/mysql-bin.log #--binlog_do_db=test_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456 #设置root帐号密码
+      TZ: Asia/Shanghai
+    ports:
+      - 3306:3306
+    volumes:
+      - /usr/local/docker/mysql/data:/var/lib/mysql
