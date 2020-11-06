@@ -1,4 +1,4 @@
-package com.laoshiren.hello.canal.es.service;
+package com.laoshiren.hello.canal.es.service.elastic;
 
 import com.laoshiren.hello.canal.es.domain.EntryDto;
 

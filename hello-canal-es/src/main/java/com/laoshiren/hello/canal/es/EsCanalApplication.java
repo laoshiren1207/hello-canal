@@ -2,6 +2,7 @@ package com.laoshiren.hello.canal.es;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * ProjectName:     hello-canal
@@ -14,6 +15,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * Version:         1.0.0
  */
 @SpringBootApplication
+@EnableScheduling
 public class EsCanalApplication {
 
     public static void main(String[] args) {

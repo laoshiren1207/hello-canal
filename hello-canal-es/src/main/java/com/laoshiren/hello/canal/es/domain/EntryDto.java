@@ -4,7 +4,9 @@ import com.alibaba.otter.canal.protocol.CanalEntry;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.laoshiren.hello.canal.common.utils.ColumnToPropertyUtils;
 import com.laoshiren.hello.canal.common.utils.JsonUtils;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.HashMap;
@@ -23,6 +25,8 @@ import java.util.Map;
  */
 @Data
 @Accessors(chain = true)
+@NoArgsConstructor
+@AllArgsConstructor
 public class EntryDto {
 
     /**
@@ -49,10 +53,6 @@ public class EntryDto {
      * 实际数据
      */
     private String data;
-
-    public EntryDto(){
-
-    }
 
     /**
      * entry 2 Object
@@ -97,12 +97,9 @@ public class EntryDto {
      * @return  String  dbName_tableName
      */
     public String getIndexName(){
-        StringBuilder builder = new StringBuilder();
-        return builder
-                .append(this.schemaName)
-                .append("_")
-                .append(this.tableName)
-                .toString();
+        return this.schemaName +
+                "_" +
+                this.tableName;
     }
 
 }

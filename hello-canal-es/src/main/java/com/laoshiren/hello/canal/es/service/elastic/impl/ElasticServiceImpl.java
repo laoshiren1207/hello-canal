@@ -1,13 +1,12 @@
-package com.laoshiren.hello.canal.es.service.impl;
+package com.laoshiren.hello.canal.es.service.elastic.impl;
 
 import com.laoshiren.hello.canal.common.utils.JsonUtils;
 import com.laoshiren.hello.canal.es.domain.EntryDto;
-import com.laoshiren.hello.canal.es.service.ElasticService;
+import com.laoshiren.hello.canal.es.service.elastic.ElasticService;
 import lombok.extern.slf4j.Slf4j;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
