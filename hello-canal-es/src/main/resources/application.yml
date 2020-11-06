@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: canal-example
+
+server:
+  port: 19000
+
+canal:
+  hostname: 127.0.0.1
+  port: 11111
+  destination: example
+
+es:
+  hostname: 120.79.0.210
+  port: 9200
+  scheme: http

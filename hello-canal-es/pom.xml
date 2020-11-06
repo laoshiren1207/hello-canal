@@ -13,8 +13,8 @@
 
     <developers>
         <developer>
-            <name>yangyunwq</name>
-            <email>yangyun@pharmakeyring.com</email>
+            <name>laoshiren</name>
+            <email>xiangdehua@pharmakeyring.com</email>
         </developer>
     </developers>
 
@@ -24,9 +24,47 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <!-- springboot 2.1.8.RELEASE 默认是6.4.3 手动修改版本-->
+        <elasticsearch.version>7.6.2</elasticsearch.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+
+        <!--common-->
+        <dependency>
+            <groupId>com.laoshiren.hello.canal</groupId>
+            <artifactId>canal-common</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+        <!--alibaba canal -->
+        <dependency>
+            <groupId>com.alibaba.otter</groupId>
+            <artifactId>canal.client</artifactId>
+        </dependency>
+        <!-- springboot start  -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.elasticsearch.client</groupId>
+            <artifactId>elasticsearch-rest-high-level-client</artifactId>
+        </dependency>
 
     </dependencies>
 

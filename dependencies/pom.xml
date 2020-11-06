@@ -17,6 +17,8 @@
         <spring-cloud-alibaba.verion>2.1.0.RELEASE</spring-cloud-alibaba.verion>
         <!-- Ali Cloud -->
         <aliyun-sdk-oss.version>3.6.0</aliyun-sdk-oss.version>
+        <!-- ali canal -->
+        <ali.canal.version>1.1.4</ali.canal.version>
     </properties>
 
 
@@ -63,6 +65,13 @@
                 <groupId>io.github.openfeign</groupId>
                 <artifactId>feign-okhttp</artifactId>
                 <version>${feign-okhttp.version}</version>
+            </dependency>
+
+            <!-- alibaba canal -->
+            <dependency>
+                <groupId>com.alibaba.otter</groupId>
+                <artifactId>canal.client</artifactId>
+                <version>${ali.canal.version}</version>
             </dependency>
 
         </dependencies>
