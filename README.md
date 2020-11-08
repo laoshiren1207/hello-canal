@@ -38,14 +38,67 @@
 
 ##  3. 如何使用Canal
 
-### 3.1 Canal 准备 -- 数据源
+### 3.1 Canal 准备 -- 数据库
 
+首先准备一个`mysql`数据库，并且在 `mysqld`添加如下
 
+~~~ini
+[mysqld]
+log-bin=D:\mysql-5.7.32\mysql-bin
+binlog-format=ROW
+server-id=123454
+~~~
+或者使用`docker`的方式，不过得修改容器内文件`/etc/mysql/mysql.conf.d/mysqld.cnf`
+
+~~~shell
+## 进入容器
+docker exec -it mysql-canal /bin/bash 
+## 添加如下
+log-bin=/var/lib/mysql/mysql-bin
+binlog-format=ROW
+server-id=123454
+## 重启容器
+docker restart mysql-canal
+~~~
+
+~~~sql
+show variables like 'log_%';
+~~~
+
+~~~sql
+show binary logs;
+~~~
 
 ### 3.2 Canal准备 -- 服务端
 
+下载`canal`服务端`https://github.com/alibaba/canal/releases`
+
+修改配置文件`conf/example/instance.properties`
+
+~~~properties
+# 主数据库地址
+canal.instance.master.address = 127.0.0.1:3306
+# mysql binary log
+canal.instance.master.journal.name = mysql-bin.000001
+# 偏移量 show BINARY logs;
+canal.instance.master.position = 154
+
+# username/password
+# 在MySQL服务器授权的账号密码
+canal.instance.dbUsername = root
+canal.instance.dbPassword = 123456
+
+# table regex
+# 监听所有表，也可以指定表用,分割
+canal.instance.filter.regex = .*\\..*
+~~~
+
 ### 3.3 Canal业务 -- Java
 
+在`GitHub`上有他的`Example`示例这里不多赘述，[点击此处跳转示例]
+
 ### 3.4 Canal业务 -- SpringBoot
+
+这里是我本人写的一个示例，将`mysql`的数据同步到`ES`上
 
 ## 4 测试
