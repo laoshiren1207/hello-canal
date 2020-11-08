@@ -65,9 +65,13 @@ docker restart mysql-canal
 show variables like 'log_%';
 ~~~
 
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/f317cdf0-90e5-4df3-a5f9-01aaae515f45.png)
+
 ~~~sql
 show binary logs;
 ~~~
+
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/1ec0327d-1a38-4dee-a860-d8ab547952ab.png)
 
 ### 3.2 Canal准备 -- 服务端
 
@@ -93,12 +97,392 @@ canal.instance.dbPassword = 123456
 canal.instance.filter.regex = .*\\..*
 ~~~
 
+修改 `conf/canal.properties`
+
+~~~properties
+
+~~~
+
 ### 3.3 Canal业务 -- Java
 
-在`GitHub`上有他的`Example`示例这里不多赘述，[点击此处跳转示例]
+在`GitHub`上有他的`Example`示例这里不多赘述，[点击此处跳转示例](https://github.com/alibaba/canal/wiki/ClientExample)。
 
 ### 3.4 Canal业务 -- SpringBoot
 
-这里是我本人写的一个示例，将`mysql`的数据同步到`ES`上
+这里是我本人写的一个示例，将`mysql`的数据同步到`ES`上（本来中间应该加一层`MQ` ，但是自己的阿里云服务器内存不够用了，所以省略）。
+
+~~~shell
++--------+       +--------+        +--------+        +----------+
+|  mysql |  ---> | Canal  |  --->  |   MQ   |  --->  | es/redis |
++--------+       +--------+        +--------+        +----------+
+~~~
+
+第一部搭建一个`ES`，可以参考我之前的博客[微服务解决方案 -- 高效搜索 Elastic Search 7.6.2 (上)](https://blog.csdn.net/weixin_42126468/article/details/107288069)，里面有用`docker`的方式搭建一个`elastic search`。
+
+然后引入依赖，分别是`Canal`的依赖和`ES`的依赖
+
+~~~xml
+<!-- ali canal -->
+<properties
+    <ali.canal.version>1.1.4</ali.canal.version>
+	<elasticsearch.version>7.6.2</elasticsearch.version>
+</properties>
+<!-- alibaba canal -->
+<dependency>
+    <groupId>com.alibaba.otter</groupId>
+    <artifactId>canal.client</artifactId>
+    <version>${ali.canal.version}</version>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>org.elasticsearch.client</groupId>
+    <artifactId>elasticsearch-rest-high-level-client</artifactId>
+</dependency>
+~~~
+
+配置文件
+
+~~~yaml
+spring:
+  application:
+    name: canal-example
+
+server:
+  port: 19000
+## canal 配置
+canal:
+  hostname: 127.0.0.1
+  port: 11111
+  destination: example
+## es 配置
+es:
+  hostname: 127.0.0.1
+  port: 9200
+  scheme: http
+~~~
+
+配置2个配置类
+
+~~~java
+package com.laoshiren.hello.canal.es.configure;
+
+import com.alibaba.otter.canal.client.CanalConnector;
+import com.alibaba.otter.canal.client.impl.SimpleCanalConnector;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.net.InetSocketAddress;
+
+/**
+ * ProjectName:     hello-canal
+ * Package:         com.laoshiren.hello.canal.es.configure
+ * ClassName:       CanalConfiguration
+ * Author:          laoshiren
+ * Git:             15207034473@163.com
+ * Description:
+ * Date:            2020/10/21 14:05
+ * Version:         1.0.0
+ */
+@Configuration
+@Slf4j
+public class CanalConfiguration {
+
+    /**
+     * canal 服务地址
+     */
+    @Value(value = "${canal.hostname}")
+    private String hostName;
+
+    /**
+     * canal 端口
+     */
+    @Value(value = "${canal.port}")
+    private Integer port;
+
+    /**
+     * canal 目标
+     */
+    @Value(value = "${canal.destination}")
+    private String destination;
+
+    /**
+     * canal 连接器
+     * @return  canalConnector
+     */
+    @Bean("canalConnector")
+    public CanalConnector initCanalConnector(){
+        log.info("-- canal init --");
+        InetSocketAddress address = new InetSocketAddress(hostName, port);
+        // canalConnector
+        log.info("-- canal params -- {} -- {} --",hostName,port);
+        SimpleCanalConnector canalConnector = new SimpleCanalConnector(address, "", "", destination);
+        canalConnector.setSoTimeout(60 * 1000);
+        canalConnector.setIdleTimeout(-1);
+        log.info("-- canal finish --");
+        return canalConnector;
+    }
+
+}
+~~~
+
+~~~java
+package com.laoshiren.hello.canal.es.configure;
+
+import lombok.extern.slf4j.Slf4j;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * ProjectName:     hello-canal
+ * Package:         com.laoshiren.hello.canal.es.configure
+ * ClassName:       ElasticSearchClientConfiguration
+ * Author:          laoshiren
+ * Git:             15207034473@163.com
+ * Description:
+ * Date:            2020/10/23 14:09
+ * Version:         1.0.0
+ */
+@Configuration
+@Slf4j
+public class ElasticSearchClientConfiguration {
+
+    @Value("${es.hostname}")
+    private String hostname;
+    @Value("${es.port}")
+    private int port;
+    @Value("${es.scheme}")
+    private String scheme;
+
+    @Bean
+    public RestHighLevelClient restHighLevelClient(){
+        log.info("-- es init --");
+        log.info("-- es params -- {} -- {} -- {} --",hostname,port,scheme);
+        log.info("-- es finish --");
+        return new RestHighLevelClient(
+                RestClient.builder(new HttpHost(hostname,port,scheme))
+                        .setRequestConfigCallback(requestConfigBuilder -> {
+                            requestConfigBuilder.setConnectTimeout(-1);
+                            requestConfigBuilder.setSocketTimeout(30000);
+                            requestConfigBuilder.setConnectionRequestTimeout(30000);
+                            return requestConfigBuilder;
+                        })
+        );
+    }
+}
+~~~
+
+设计同步的对象
+
+~~~java
+package com.laoshiren.hello.canal.es.domain;
+
+import com.alibaba.otter.canal.protocol.CanalEntry;
+import com.google.protobuf.InvalidProtocolBufferException;
+import com.laoshiren.hello.canal.common.utils.ColumnToPropertyUtils;
+import com.laoshiren.hello.canal.common.utils.JsonUtils;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * ProjectName:     hello-canal
+ * Package:         com.laoshiren.hello.canal.es.domain
+ * ClassName:       EntryDto
+ * Author:          laoshiren
+ * Git:             15207034473@163.com
+ * Description:
+ * Date:            2020/10/21 14:32
+ * Version:         1.0.0
+ */
+@Data
+@Accessors(chain = true)
+@NoArgsConstructor
+@AllArgsConstructor
+public class EntryDto {
+
+    /**
+     * id
+     */
+    private String id;
+
+    /**
+     * 数据库名
+     */
+    private String schemaName;
+
+    /**
+     * 表明
+     */
+    private String tableName;
+
+    /**
+     * 操作类型
+     */
+    private CanalEntry.EventType eventType;
+
+    /**
+     * 实际数据
+     */
+    private String data;
+
+    /**
+     * entry 2 Object
+     * @param entry CanalEntry.Entry
+     */
+    public EntryDto(CanalEntry.Entry entry){
+        // 操作数据库名
+        this.schemaName = entry.getHeader().getSchemaName();
+        // 操作表名
+        this.tableName = entry.getHeader().getTableName();
+        try {
+            CanalEntry.RowChange rowChange = CanalEntry.RowChange.parseFrom(entry.getStoreValue());
+            // 操作类型
+            CanalEntry.EventType eventType = rowChange.getEventType();
+            this.eventType = eventType;
+            // 实际数据
+            List<CanalEntry.RowData> rowDataList = rowChange.getRowDatasList();
+            Map<String,Object> dataMap = new HashMap<>();
+            for (CanalEntry.RowData rowData : rowDataList) {
+                // 获取数据
+                List<CanalEntry.Column> columns = rowData.getAfterColumnsList();
+                if (eventType.equals(CanalEntry.EventType.DELETE)) {
+                    // 如果是删除获取之前的数据
+                    columns = rowData.getBeforeColumnsList();
+                }
+                for (CanalEntry.Column column : columns) {
+                    // 主键
+                    if (column.getIsKey()) {
+                        this.id = column.getValue();
+                    }
+                    // 转换json
+                    dataMap.put(ColumnToPropertyUtils.columnToProperty2(column.getName()),column.getValue());
+                }
+            }
+            this.data = JsonUtils.obj2json(dataMap);
+        } catch (InvalidProtocolBufferException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 索引名
+     * @return  String  dbName_tableName
+     */
+    public String getIndexName(){
+        return this.schemaName +
+                "_" +
+                this.tableName;
+    }
+
+}
+~~~
+
+`Canal`操作
+
+~~~java
+/**
+ * List<Entry> 转换成对象
+ *
+ * @param entries entry
+ * @return List EntryDto
+ */
+public List<EntryDto> mappingEntry(List<CanalEntry.Entry> entries) {
+    return entries.stream()
+            .filter(it -> {
+                //开启/关闭事务的实体类型，跳过
+                return it.getEntryType() != CanalEntry.EntryType.TRANSACTIONBEGIN &&
+                        it.getEntryType() != CanalEntry.EntryType.TRANSACTIONEND;
+            })
+            .map(EntryDto::new)
+            .collect(Collectors.toList());
+}
+
+/**
+ * 交给es处理
+ * @param list entryList
+ */
+public void elasticHandler(List<EntryDto> list){
+    list.forEach( it-> elasticService.documentHandler(it));
+}
+~~~
+
+`ES`操作
+
+~~~java
+@Resource
+private RestHighLevelClient restHighLevelClient;
+
+@Override
+public void documentHandler(EntryDto entryDto) {
+    log.info("---- index ---- {} ----- {}",entryDto.getIndexName(), JsonUtils.obj2json(entryDto));
+    switch (entryDto.getEventType()) {
+        case UPDATE: documentUpdate(entryDto);break;
+        case INSERT: documentCreate(entryDto);break;
+        case DELETE: documentDelete(entryDto);break;
+        default: break;
+    }
+}
+
+// 部分代码省略
+~~~
+
+定时任务去向`Canal`的服务拉去数据
+
+~~~java
+boolean initFlag = false;
+
+@Scheduled(cron = "*/2 * * * * ?")
+public void canalHandler(){
+    boolean init = init();
+    if (init) {
+        Message message = connector.getWithoutAck(100);
+        long batchId = message.getId();
+        int size = message.getEntries().size();
+        if (batchId == -1 || size == 0) {
+            log.info("listen ...... ");
+        } else {
+            // 转换成EntryDto ，上面设计好的数据对象 
+            List<EntryDto> list = canalService.mappingEntry(message.getEntries());
+            // 发送到ES上
+            canalService.elasticHandler(list);
+        }
+        connector.ack(batchId); // 提交确认
+    }
+
+}
+
+private boolean init(){
+    if (!initFlag) {
+        connector.connect();
+        connector.subscribe(".*\\..*");
+        connector.rollback();
+        initFlag = !initFlag;
+        log.info(" --- init --- init canal job finished");
+    }
+    return initFlag;
+}
+~~~
+
+当然最好是中间有一层`MQ`让这个客户端一个一个消费。
 
 ## 4 测试
+
+插入一个数据`ES`上就可以看到数据了
+
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/7ef8d8bb-528c-47d3-b6a0-32e43908c77e.png)
