@@ -1,4 +1,6 @@
-# Canal 
+
+
+# 微服务解决方案 Canal 
 
 ## 1. 什么是Canal
 
@@ -483,6 +485,12 @@ private boolean init(){
 
 ## 4 测试
 
-插入一个数据`ES`上就可以看到数据了
+插入一个数据`ES`上就可以看到数据了。
 
-![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/7ef8d8bb-528c-47d3-b6a0-32e43908c77e.png)
+
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/223101ae-639c-449b-bb4a-9163078c631e.png)
+
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/55d96b8c-8da9-44a8-b2f9-891eec161fdb.png)
+
+![](https://laoshiren.oss-cn-shanghai.aliyuncs.com/5b153fbb-f537-4448-9ba6-69f0840de744.png)
+
